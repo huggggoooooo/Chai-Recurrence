@@ -4,14 +4,13 @@
 
 import logging
 from pathlib import Path
-from typing import NamedTuple
 
 from chai_lab.data.parsing.structure.entity_type import EntityType
 from chai_lab.data.residue_constants import restype_1to3_with_x
 
 logger = logging.getLogger(__name__)
 
-Fasta = NamedTuple("Fasta", [("header", str), ("sequence", str)])
+Fasta = tuple[str, str]
 
 
 nucleic_acid_1_to_name: dict[tuple[str, EntityType], str] = {
@@ -30,7 +29,7 @@ def read_fasta(file_path: str | Path) -> list[Fasta]:
     from Bio import SeqIO
 
     fasta_sequences = SeqIO.parse(open(file_path), "fasta")
-    return [Fasta(fasta.description, str(fasta.seq)) for fasta in fasta_sequences]
+    return [(fasta.id, str(fasta.seq)) for fasta in fasta_sequences]
 
 
 def get_residue_name(

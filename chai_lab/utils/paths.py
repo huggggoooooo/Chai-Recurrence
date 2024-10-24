@@ -4,12 +4,10 @@
 
 import dataclasses
 import os
-import random
 from pathlib import Path
 from typing import Final
 
 import requests
-from filelock import FileLock
 
 # use this path object to specify location
 # of anything within repository
@@ -25,24 +23,19 @@ downloads_path = Path(os.environ.get("CHAI_DOWNLOADS_DIR", downloads_path))
 assert repo_root.exists()
 
 
-def download_if_not_exists(http_url: str, path: Path):
+def download(http_url: str, path: Path):
     print(f"downloading {http_url}")
-    if path.exists():
-        return
+    tmp_path = path.with_suffix(".download_tmp")
 
-    with FileLock(path.with_suffix(".download_lock")):
-        if path.exists():
-            return  # if-lock-if sandwich to download only once
-        tmp_path = path.with_suffix(f".download_tmp_{random.randint(10 ** 5, 10**6)}")
-        with requests.get(http_url, stream=True) as response:
-            response.raise_for_status()  # Check if the request was successful
-            # Open a local file with the specified name
-            path.parent.mkdir(exist_ok=True, parents=True)
-            with tmp_path.open("wb") as file:
-                # Download the file in chunks
-                for chunk in response.iter_content(chunk_size=8192):
-                    if chunk:  # Filter out keep-alive new chunks
-                        file.write(chunk)
+    with requests.get(http_url, stream=True) as response:
+        response.raise_for_status()  # Check if the request was successful
+        # Open a local file with the specified name
+        path.parent.mkdir(exist_ok=True, parents=True)
+        with tmp_path.open("wb") as file:
+            # Download the file in chunks
+            for chunk in response.iter_content(chunk_size=8192):
+                if chunk:  # Filter out keep-alive new chunks
+                    file.write(chunk)
     tmp_path.rename(path)
     assert path.exists()
 
@@ -54,7 +47,9 @@ class Downloadable:
 
     def get_path(self) -> Path:
         # downloads artifact if necessary
-        download_if_not_exists(self.url, path=self.path)
+        if not self.path.exists():
+            download(self.url, path=self.path)
+
         return self.path
 
 
@@ -72,6 +67,7 @@ def chai1_component(comp_key: str) -> Path:
     assert comp_key.endswith(".pt2")
     url = f"https://chaiassets.com/chai1-inference-depencencies/models/{comp_key}"
     result = downloads_path.joinpath("models", comp_key)
-    download_if_not_exists(url, result)
+    if not result.exists():
+        download(url, result)
 
     return result

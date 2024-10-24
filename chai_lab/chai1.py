@@ -26,7 +26,6 @@ from chai_lab.data.dataset.constraints.constraint_context import ConstraintConte
 from chai_lab.data.dataset.embeddings.embedding_context import EmbeddingContext
 from chai_lab.data.dataset.embeddings.esm import get_esm_embedding_context
 from chai_lab.data.dataset.inference_dataset import load_chains_from_raw, read_inputs
-from chai_lab.data.dataset.msas.load import get_msa_contexts
 from chai_lab.data.dataset.msas.msa_context import MSAContext
 from chai_lab.data.dataset.structure.all_atom_structure_context import (
     AllAtomStructureContext,
@@ -89,6 +88,16 @@ from chai_lab.utils.tensor_utils import move_data_to_device, set_seed, und_self
 from chai_lab.utils.typing import Float, typecheck
 
 
+from chai_lab.model.feature_embedding_module import feature_embedding_module
+# from chai_lab.model.token_input_embedder_module import token_input_embedder_module
+from chai_lab.model.token_input_embedder_module_t import token_input_embedder_module
+from chai_lab.model.trunk_module import trunk_module
+# from chai_lab.model.deffusion_module import deffusion_module
+from chai_lab.model.deffusion_module_t import deffusion_module
+# from chai_lab.model.confidence_head_module import confidence_head_module
+from chai_lab.model.confidence_head_module_t import confidence_head_module
+
+
 class UnsupportedInputError(RuntimeError):
     pass
 
@@ -96,6 +105,7 @@ class UnsupportedInputError(RuntimeError):
 def load_exported(comp_key: str, device: torch.device) -> torch.nn.Module:
     local_path = chai1_component(comp_key)
     exported_program = torch.export.load(local_path)
+    # print(local_path)
     return exported_program.module().to(device)
 
 
@@ -250,7 +260,6 @@ def run_inference(
     *,
     output_dir: Path,
     use_esm_embeddings: bool = True,
-    msa_directory: Path | None = None,
     # expose some params for easy tweaking
     num_trunk_recycles: int = 3,
     num_diffn_timesteps: int = 200,
@@ -278,27 +287,21 @@ def run_inference(
     raise_if_too_many_tokens(n_actual_tokens)
 
     # Load MSAs
-    if msa_directory is not None:
-        msa_context, msa_profile_context = get_msa_contexts(
-            chains, msa_directory=msa_directory
-        )
-    else:
-        msa_context = MSAContext.create_empty(
-            n_tokens=n_actual_tokens, depth=MAX_MSA_DEPTH
-        )
-        msa_profile_context = MSAContext.create_empty(
-            n_tokens=n_actual_tokens, depth=MAX_MSA_DEPTH
-        )
-    assert (
-        msa_context.num_tokens == merged_context.num_tokens
-    ), f"Discrepant tokens in input and MSA: {merged_context.num_tokens} != {msa_context.num_tokens}"
+    msa_context = MSAContext.create_empty(
+        n_tokens=n_actual_tokens,
+        depth=MAX_MSA_DEPTH,
+    )
+    main_msa_context = MSAContext.create_empty(
+        n_tokens=n_actual_tokens,
+        depth=MAX_MSA_DEPTH,
+    )
 
     # Load templates
     template_context = TemplateContext.empty(
         n_tokens=n_actual_tokens,
         n_templates=MAX_NUM_TEMPLATES,
     )
-
+    
     # Load ESM embeddings
     if use_esm_embeddings:
         embedding_context = get_esm_embedding_context(chains, device=device)
@@ -313,7 +316,7 @@ def run_inference(
         chains=chains,
         structure_context=merged_context,
         msa_context=msa_context,
-        profile_msa_context=msa_profile_context,
+        main_msa_context=main_msa_context,
         template_context=template_context,
         embedding_context=embedding_context,
         constraint_context=constraint_context,
@@ -366,7 +369,7 @@ def run_folding_on_context(
     raise_if_too_many_tokens(n_actual_tokens)
     raise_if_too_many_templates(feature_context.template_context.num_templates)
     raise_if_msa_too_deep(feature_context.msa_context.depth)
-    # NOTE profile MSA used only for statistics; no depth check
+    raise_if_msa_too_deep(feature_context.main_msa_context.depth)
 
     ##
     ## Prepare batch
@@ -384,6 +387,7 @@ def run_folding_on_context(
     batch = collator(feature_contexts)
     batch = move_data_to_device(batch, device=device)
 
+
     # Get features and inputs from batch
     features = {name: feature for name, feature in batch["features"].items()}
     inputs = batch["inputs"]
@@ -400,13 +404,18 @@ def run_folding_on_context(
         inputs["template_mask"], "b t n1, b t n2 -> b t n1 n2"
     )
     block_atom_pair_mask = inputs["block_atom_pair_mask"]
-
+    
+    for key, value in features.items():
+        float_value = value.float()
+        float_value.requires_grad_()
+        value = float_value
     ##
     ## Load exported models
     ##
 
     # Model is size-specific
     model_size = min(x for x in AVAILABLE_MODEL_SIZES if n_actual_tokens <= x)
+    print(f"model_size: {model_size}")
 
     feature_embedding = load_exported(f"{model_size}/feature_embedding.pt2", device)
     token_input_embedder = load_exported(
@@ -421,6 +430,9 @@ def run_folding_on_context(
     ##
 
     embedded_features = feature_embedding.forward(**features)
+    # values = [features[key] for key in features.keys()]
+    # feature_embedding = feature_embedding_module(feature_embedding)
+    # embedded_features = feature_embedding.forward(*values)
     token_single_input_feats = embedded_features["TOKEN"]
     token_pair_input_feats, token_pair_structure_input_feats = embedded_features[
         "TOKEN_PAIR"
@@ -438,16 +450,28 @@ def run_folding_on_context(
     ## Run the inputs through the token input embedder
     ##
 
-    token_input_embedder_outputs: tuple[Tensor, ...] = token_input_embedder.forward(
-        token_single_input_feats=token_single_input_feats,
-        token_pair_input_feats=token_pair_input_feats,
-        atom_single_input_feats=atom_single_input_feats,
-        block_atom_pair_feat=block_atom_pair_input_feats,
-        block_atom_pair_mask=block_atom_pair_mask,
-        block_indices_h=block_indices_h,
-        block_indices_w=block_indices_w,
-        atom_single_mask=atom_single_mask,
-        atom_token_indices=atom_token_indices,
+    # token_input_embedder_outputs: tuple[Tensor, ...] = token_input_embedder.forward(
+    #     token_single_input_feats=token_single_input_feats,
+    #     token_pair_input_feats=token_pair_input_feats,
+    #     atom_single_input_feats=atom_single_input_feats,
+    #     block_atom_pair_feat=block_atom_pair_input_feats,
+    #     block_atom_pair_mask=block_atom_pair_mask,
+    #     block_indices_h=block_indices_h,
+    #     block_indices_w=block_indices_w,
+    #     atom_single_mask=atom_single_mask,
+    #     atom_token_indices=atom_token_indices,
+    # )
+
+    token_input_embedder_outputs: tuple[Tensor, ...] = token_input_embedder_module(token_input_embedder).forward(
+        token_single_input_feats,
+        token_pair_input_feats,
+        atom_single_input_feats,
+        block_atom_pair_input_feats,
+        block_atom_pair_mask,
+        block_indices_h,
+        block_indices_w,
+        atom_single_mask,
+        atom_token_indices,
     )
     token_single_initial_repr, token_single_structure_input, token_pair_initial_repr = (
         token_input_embedder_outputs
@@ -487,22 +511,39 @@ def run_folding_on_context(
             atom_pos, "(b s) ... -> b s ...", s=s
         ).contiguous()
         noise_sigma = repeat(sigma, " -> b s", b=batch_size, s=s)
-        return diffusion_module.forward(
-            token_single_initial_repr=token_single_structure_input.float(),
-            token_pair_initial_repr=token_pair_structure_input_feats.float(),
-            token_single_trunk_repr=token_single_trunk_repr.float(),
-            token_pair_trunk_repr=token_pair_trunk_repr.float(),
-            atom_single_input_feats=atom_single_structure_input_feats.float(),
-            atom_block_pair_input_feats=block_atom_pair_structure_input_feats.float(),
-            atom_single_mask=atom_single_mask,
-            atom_block_pair_mask=block_atom_pair_mask,
-            token_single_mask=token_single_mask,
-            block_indices_h=block_indices_h,
-            block_indices_w=block_indices_w,
-            atom_noised_coords=atom_noised_coords.float(),
-            noise_sigma=noise_sigma.float(),
-            atom_token_indices=atom_token_indices,
+        # return diffusion_module.forward(
+        #     token_single_initial_repr=token_single_structure_input.float(),
+        #     token_pair_initial_repr=token_pair_structure_input_feats.float(),
+        #     token_single_trunk_repr=token_single_trunk_repr.float(),
+        #     token_pair_trunk_repr=token_pair_trunk_repr.float(),
+        #     atom_single_input_feats=atom_single_structure_input_feats.float(),
+        #     atom_block_pair_input_feats=block_atom_pair_structure_input_feats.float(),
+        #     atom_single_mask=atom_single_mask,
+        #     atom_block_pair_mask=block_atom_pair_mask,
+        #     token_single_mask=token_single_mask,
+        #     block_indices_h=block_indices_h,
+        #     block_indices_w=block_indices_w,
+        #     atom_noised_coords=atom_noised_coords.float(),
+        #     noise_sigma=noise_sigma.float(),
+        #     atom_token_indices=atom_token_indices,
+        # )
+        return deffusion_module(diffusion_module).forward(
+            token_single_structure_input.float(),
+            token_pair_structure_input_feats.float(),
+            token_single_trunk_repr.float(),
+            token_pair_trunk_repr.float(),
+            atom_single_structure_input_feats.float(),
+            block_atom_pair_structure_input_feats.float(),
+            atom_single_mask,
+            block_atom_pair_mask,
+            token_single_mask,
+            block_indices_h,
+            block_indices_w,
+            atom_noised_coords.float(),
+            noise_sigma.float(),
+            atom_token_indices,
         )
+
 
     num_diffn_samples = 5  # Fixed at export time
     inference_noise_schedule = InferenceNoiseSchedule(
@@ -555,6 +596,7 @@ def run_folding_on_context(
             sigma=sigma_hat,
             s=num_diffn_samples,
         )
+
         d_i = (atom_pos_hat - denoised_pos) / sigma_hat
         atom_pos = atom_pos_hat + (sigma_next - sigma_hat) * d_i
 
@@ -576,17 +618,32 @@ def run_folding_on_context(
     ## Run the confidence model
     ##
 
+    # confidence_outputs: list[tuple[Tensor, ...]] = [
+    #     confidence_head.forward(
+    #         token_single_input_repr=token_single_initial_repr,
+    #         token_single_trunk_repr=token_single_trunk_repr,
+    #         token_pair_trunk_repr=token_pair_trunk_repr,
+    #         token_single_mask=token_single_mask,
+    #         atom_single_mask=atom_single_mask,
+    #         atom_coords=atom_pos[s : s + 1],
+    #         token_reference_atom_index=token_reference_atom_index,
+    #         atom_token_index=atom_token_indices,
+    #         atom_within_token_index=atom_within_token_index,
+    #     )
+    #     for s in range(num_diffn_samples)
+    # ]
+
     confidence_outputs: list[tuple[Tensor, ...]] = [
-        confidence_head.forward(
-            token_single_input_repr=token_single_initial_repr,
-            token_single_trunk_repr=token_single_trunk_repr,
-            token_pair_trunk_repr=token_pair_trunk_repr,
-            token_single_mask=token_single_mask,
-            atom_single_mask=atom_single_mask,
-            atom_coords=atom_pos[s : s + 1],
-            token_reference_atom_index=token_reference_atom_index,
-            atom_token_index=atom_token_indices,
-            atom_within_token_index=atom_within_token_index,
+        confidence_head_module(confidence_head).forward(
+            token_single_initial_repr,
+            token_single_trunk_repr,
+            token_pair_trunk_repr,
+            token_single_mask,
+            atom_single_mask,
+            atom_pos[s : s + 1],
+            token_reference_atom_index,
+            atom_token_indices,
+            atom_within_token_index,
         )
         for s in range(num_diffn_samples)
     ]
