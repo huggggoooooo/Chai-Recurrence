@@ -3693,7 +3693,7 @@ class trunk_module(nn.Module):
         bitwise_not_10 = torch.bitwise_not(view_173) ;  view_173 = None
         masked_fill_10 = permute_108.masked_fill(bitwise_not_10,-10000) ;  permute_108 = bitwise_not_10 = None
         _to_copy_110 = masked_fill_10.to(dtype = torch.float32) ;  masked_fill_10 = None
-        None
+        _softmax = torch.softmax(_to_copy_110, dim = -1) ;  _to_copy_110 = None
         _to_copy_111 = slice_36.to(dtype = torch.float32) ;  slice_36 = None
         native_layer_norm_default_24 = (torch.nn.functional.layer_norm(_to_copy_111,[64],arg55_1,arg56_1,1e-05),) ;  _to_copy_111 = None
         getitem_164 = native_layer_norm_default_24[0]
@@ -3755,7 +3755,7 @@ class trunk_module(nn.Module):
         bitwise_not_12 = torch.bitwise_not(view_186) ;  view_186 = None
         masked_fill_12 = permute_115.masked_fill(bitwise_not_12,-10000) ;  permute_115 = bitwise_not_12 = None
         _to_copy_119 = masked_fill_12.to(dtype = torch.float32) ;  masked_fill_12 = None
-        None
+        _softmax_1 = torch.softmax(_to_copy_119, dim = -1) ;  _to_copy_119 = None
         _to_copy_120 = slice_43.to(dtype = torch.float32) ;  slice_43 = None
         native_layer_norm_default_26 = (torch.nn.functional.layer_norm(_to_copy_120,[64],arg55_1,arg56_1,1e-05),) ;  _to_copy_120 = None
         getitem_172 = native_layer_norm_default_26[0]
@@ -3817,7 +3817,7 @@ class trunk_module(nn.Module):
         bitwise_not_14 = torch.bitwise_not(view_199) ;  view_199 = None
         masked_fill_14 = permute_122.masked_fill(bitwise_not_14,-10000) ;  permute_122 = bitwise_not_14 = None
         _to_copy_128 = masked_fill_14.to(dtype = torch.float32) ;  masked_fill_14 = None
-        None
+        _softmax_2 = torch.softmax(_to_copy_128, dim = -1) ;  _to_copy_128 = None
         _to_copy_129 = slice_50.to(dtype = torch.float32) ;  slice_50 = None
         native_layer_norm_default_28 = (torch.nn.functional.layer_norm(_to_copy_129,[64],arg55_1,arg56_1,1e-05),) ;  _to_copy_129 = None
         getitem_180 = native_layer_norm_default_28[0]
@@ -3879,7 +3879,7 @@ class trunk_module(nn.Module):
         bitwise_not_16 = torch.bitwise_not(view_212) ;  view_212 = None
         masked_fill_16 = permute_129.masked_fill(bitwise_not_16,-10000) ;  permute_129 = bitwise_not_16 = None
         _to_copy_137 = masked_fill_16.to(dtype = torch.float32) ;  masked_fill_16 = None
-        None
+        _softmax_3 = torch.softmax(_to_copy_137, dim = -1) ;  _to_copy_137 = None
         _to_copy_138 = slice_57.to(dtype = torch.float32) ;  slice_57 = None
         native_layer_norm_default_30 = (torch.nn.functional.layer_norm(_to_copy_138,[64],arg55_1,arg56_1,1e-05),) ;  _to_copy_138 = arg55_1 = arg56_1 = None
         getitem_188 = native_layer_norm_default_30[0]
@@ -4428,6 +4428,7 @@ class trunk_module(nn.Module):
         _to_copy_196 = getitem_271.to(dtype = torch.bfloat16) ;  getitem_271 = None
         t_63 = _to_copy_195.t() ;  _to_copy_195 = None
         view_324 = _to_copy_196.view(2097152, 64) ;  _to_copy_196 = None
+        print(torch.cuda.memory_allocated()/1024**2)
         mm_58 = torch.mm(view_324,t_63) ;  view_324 = t_63 = None
         view_325 = mm_58.view(1, 16384, 128, 512) ;  mm_58 = None
         split_tensor_24 = torch.split(view_325,256,dim = -1) ;  view_325 = None
@@ -4520,7 +4521,7 @@ class trunk_module(nn.Module):
         bitwise_not_25 = torch.bitwise_not(view_346) ;  view_346 = None
         masked_fill_25 = permute_220.masked_fill(bitwise_not_25,-10000) ;  permute_220 = bitwise_not_25 = None
         _to_copy_213 = masked_fill_25.to(dtype = torch.float32) ;  masked_fill_25 = None
-        None
+        _softmax_4 = torch.softmax(_to_copy_213, dim = -1) ;  _to_copy_213 = None
         _to_copy_214 = slice_93.to(dtype = torch.float32) ;  slice_93 = None
         native_layer_norm_default_46 = (torch.nn.functional.layer_norm(_to_copy_214,[64],arg62_1,arg63_1,1e-05),) ;  _to_copy_214 = None
         getitem_294 = native_layer_norm_default_46[0]
@@ -4582,7 +4583,7 @@ class trunk_module(nn.Module):
         bitwise_not_27 = torch.bitwise_not(view_359) ;  view_359 = None
         masked_fill_27 = permute_227.masked_fill(bitwise_not_27,-10000) ;  permute_227 = bitwise_not_27 = None
         _to_copy_222 = masked_fill_27.to(dtype = torch.float32) ;  masked_fill_27 = None
-        None
+        _softmax_5 = torch.softmax(_to_copy_222, dim = -1) ;  _to_copy_222 = None
         _to_copy_223 = slice_100.to(dtype = torch.float32) ;  slice_100 = None
         native_layer_norm_default_48 = (torch.nn.functional.layer_norm(_to_copy_223,[64],arg62_1,arg63_1,1e-05),) ;  _to_copy_223 = None
         getitem_302 = native_layer_norm_default_48[0]
@@ -4644,7 +4645,7 @@ class trunk_module(nn.Module):
         bitwise_not_29 = torch.bitwise_not(view_372) ;  view_372 = None
         masked_fill_29 = permute_234.masked_fill(bitwise_not_29,-10000) ;  permute_234 = bitwise_not_29 = None
         _to_copy_231 = masked_fill_29.to(dtype = torch.float32) ;  masked_fill_29 = None
-        None
+        _softmax_6 = torch.softmax(_to_copy_231, dim = -1) ;  _to_copy_231 = None
         _to_copy_232 = slice_107.to(dtype = torch.float32) ;  slice_107 = None
         native_layer_norm_default_50 = (torch.nn.functional.layer_norm(_to_copy_232,[64],arg62_1,arg63_1,1e-05),) ;  _to_copy_232 = None
         getitem_310 = native_layer_norm_default_50[0]
@@ -4706,7 +4707,7 @@ class trunk_module(nn.Module):
         bitwise_not_31 = torch.bitwise_not(view_385) ;  view_385 = None
         masked_fill_31 = permute_241.masked_fill(bitwise_not_31,-10000) ;  permute_241 = bitwise_not_31 = None
         _to_copy_240 = masked_fill_31.to(dtype = torch.float32) ;  masked_fill_31 = None
-        None
+        _softmax_7 = torch.softmax(_to_copy_240, dim = -1) ;  _to_copy_240 = None
         _to_copy_241 = slice_114.to(dtype = torch.float32) ;  slice_114 = None
         native_layer_norm_default_52 = (torch.nn.functional.layer_norm(_to_copy_241,[64],arg62_1,arg63_1,1e-05),) ;  _to_copy_241 = arg62_1 = arg63_1 = None
         getitem_318 = native_layer_norm_default_52[0]
@@ -5347,7 +5348,7 @@ class trunk_module(nn.Module):
         bitwise_not_40 = torch.bitwise_not(view_519) ;  view_519 = None
         masked_fill_40 = permute_332.masked_fill(bitwise_not_40,-10000) ;  permute_332 = bitwise_not_40 = None
         _to_copy_316 = masked_fill_40.to(dtype = torch.float32) ;  masked_fill_40 = None
-        None
+        _softmax_8 = torch.softmax(_to_copy_316, dim = -1) ;  _to_copy_316 = None
         _to_copy_317 = slice_150.to(dtype = torch.float32) ;  slice_150 = None
         native_layer_norm_default_68 = (torch.nn.functional.layer_norm(_to_copy_317,[64],arg69_1,arg70_1,1e-05),) ;  _to_copy_317 = None
         getitem_424 = native_layer_norm_default_68[0]
@@ -5409,7 +5410,7 @@ class trunk_module(nn.Module):
         bitwise_not_42 = torch.bitwise_not(view_532) ;  view_532 = None
         masked_fill_42 = permute_339.masked_fill(bitwise_not_42,-10000) ;  permute_339 = bitwise_not_42 = None
         _to_copy_325 = masked_fill_42.to(dtype = torch.float32) ;  masked_fill_42 = None
-        None
+        _softmax_9 = torch.softmax(_to_copy_325, dim = -1) ;  _to_copy_325 = None
         _to_copy_326 = slice_157.to(dtype = torch.float32) ;  slice_157 = None
         native_layer_norm_default_70 = (torch.nn.functional.layer_norm(_to_copy_326,[64],arg69_1,arg70_1,1e-05),) ;  _to_copy_326 = None
         getitem_432 = native_layer_norm_default_70[0]
@@ -5471,7 +5472,7 @@ class trunk_module(nn.Module):
         bitwise_not_44 = torch.bitwise_not(view_545) ;  view_545 = None
         masked_fill_44 = permute_346.masked_fill(bitwise_not_44,-10000) ;  permute_346 = bitwise_not_44 = None
         _to_copy_334 = masked_fill_44.to(dtype = torch.float32) ;  masked_fill_44 = None
-        None
+        _softmax_10 = torch.softmax(_to_copy_334, dim = -1) ;  _to_copy_334 = None
         _to_copy_335 = slice_164.to(dtype = torch.float32) ;  slice_164 = None
         native_layer_norm_default_72 = (torch.nn.functional.layer_norm(_to_copy_335,[64],arg69_1,arg70_1,1e-05),) ;  _to_copy_335 = None
         getitem_440 = native_layer_norm_default_72[0]
@@ -5533,7 +5534,7 @@ class trunk_module(nn.Module):
         bitwise_not_46 = torch.bitwise_not(view_558) ;  view_558 = None
         masked_fill_46 = permute_353.masked_fill(bitwise_not_46,-10000) ;  permute_353 = bitwise_not_46 = None
         _to_copy_343 = masked_fill_46.to(dtype = torch.float32) ;  masked_fill_46 = None
-        None
+        _softmax_11 = torch.softmax(_to_copy_343, dim = -1) ;  _to_copy_343 = None
         _to_copy_344 = slice_171.to(dtype = torch.float32) ;  slice_171 = None
         native_layer_norm_default_74 = (torch.nn.functional.layer_norm(_to_copy_344,[64],arg69_1,arg70_1,1e-05),) ;  _to_copy_344 = arg69_1 = arg70_1 = None
         getitem_448 = native_layer_norm_default_74[0]

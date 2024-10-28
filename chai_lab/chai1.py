@@ -92,7 +92,8 @@ from chai_lab.utils.typing import Float, typecheck
 from chai_lab.model.feature_embedding_module_t import feature_embedding_module
 # from chai_lab.model.token_input_embedder_module import token_input_embedder_module
 from chai_lab.model.token_input_embedder_module_t import token_input_embedder_module
-from chai_lab.model.trunk_module import trunk_module
+# from chai_lab.model.trunk_module import trunk_module
+from chai_lab.model.trunk_module_t import trunk_module
 # from chai_lab.model.deffusion_module import deffusion_module
 from chai_lab.model.deffusion_module_t import deffusion_module
 # from chai_lab.model.confidence_head_module import confidence_head_module
@@ -497,17 +498,29 @@ def run_folding_on_context(
     token_single_trunk_repr = token_single_initial_repr
     token_pair_trunk_repr = token_pair_initial_repr
     for _ in tqdm(range(num_trunk_recycles), desc="Trunk recycles"):
-        (token_single_trunk_repr, token_pair_trunk_repr) = trunk.forward(
-            token_single_trunk_initial_repr=token_single_initial_repr,
-            token_pair_trunk_initial_repr=token_pair_initial_repr,
-            token_single_trunk_repr=token_single_trunk_repr,  # recycled
-            token_pair_trunk_repr=token_pair_trunk_repr,  # recycled
-            msa_input_feats=msa_input_feats,
-            msa_mask=msa_mask,
-            template_input_feats=template_input_feats,
-            template_input_masks=template_input_masks,
-            token_single_mask=token_single_mask,
-            token_pair_mask=token_pair_mask,
+        # (token_single_trunk_repr, token_pair_trunk_repr) = trunk.forward(
+        #     token_single_trunk_initial_repr=token_single_initial_repr,
+        #     token_pair_trunk_initial_repr=token_pair_initial_repr,
+        #     token_single_trunk_repr=token_single_trunk_repr,  # recycled
+        #     token_pair_trunk_repr=token_pair_trunk_repr,  # recycled
+        #     msa_input_feats=msa_input_feats,
+        #     msa_mask=msa_mask,
+        #     template_input_feats=template_input_feats,
+        #     template_input_masks=template_input_masks,
+        #     token_single_mask=token_single_mask,
+        #     token_pair_mask=token_pair_mask,
+        # )
+        (token_single_trunk_repr, token_pair_trunk_repr) = trunk_module(trunk).forward(
+            token_single_initial_repr,
+            token_pair_initial_repr,
+            token_single_trunk_repr,  # recycled
+            token_pair_trunk_repr,  # recycled
+            msa_input_feats,
+            msa_mask,
+            template_input_feats,
+            template_input_masks,
+            token_single_mask,
+            token_pair_mask,
         )
     # We won't be using the trunk anymore; remove it from memory
     del trunk
