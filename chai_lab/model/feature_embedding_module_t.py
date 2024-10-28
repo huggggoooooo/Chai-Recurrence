@@ -22,12 +22,54 @@ class feature_embedding_module(nn.Module):
         self.register_buffer('arg13_1', arg13_1)
         arg14_1 = model.feature_embeddings.TOKEN_PAIR.TokenPairPocketRestraint.radii
         self.register_buffer('arg14_1', arg14_1)
-        arg15_1 = model.feature_embeddings.TEMPLATES.TemplateResType.offsets
-        self.register_buffer('arg15_1', arg15_1)
+        # arg15_1 = model.feature_embeddings.TEMPLATES.TemplateResType.offsets
+        # self.register_buffer('arg15_1', arg15_1)
         self._lifted_tensor_constant0 = model._lifted_tensor_constant0
         self._lifted_tensor_constant1 = model._lifted_tensor_constant1
 
-    def forward(self, arg16_1, arg17_1, arg18_1, arg19_1, arg20_1, arg21_1, arg22_1, arg23_1, arg24_1, arg25_1, arg26_1, arg27_1, arg28_1, arg29_1, arg30_1, arg31_1, arg32_1, arg33_1, arg34_1, arg35_1, arg36_1, arg37_1, arg38_1, arg39_1, arg40_1, arg41_1, arg42_1, arg43_1, arg44_1, arg45_1, arg46_1, arg47_1):
+    
+    # def forward(self, arg16_1, arg17_1, arg18_1, arg19_1, arg20_1, arg21_1, arg22_1, arg23_1, arg24_1, arg25_1, arg26_1, arg27_1, arg28_1, arg29_1, arg30_1, arg31_1, arg32_1, arg33_1, arg34_1, arg35_1, arg36_1, arg37_1, arg38_1, arg39_1, arg40_1, arg41_1, arg42_1, arg43_1, arg44_1, arg45_1, arg46_1, arg47_1):
+    def forward(self, TemplateDistogram, TemplateMask, TemplateResType, TemplateUnitVector,
+            ChainIsCropped, ESMEmbeddings, IsDistillation, MSADeletionMean, MSAProfile,
+            MissingChainContact, ResidueType, TokenBFactor, TokenPLDDT,
+            BlockedAtomPairDistogram, InverseSquaredBlockedAtomPairDistances, IsPairedMSA,
+            MSADataSource, MSADeletionValue, MSAHasDeletion, MSAOneHot,
+            DockingConstraintGenerator, RelativeChain, RelativeEntity,
+            RelativeSequenceSeparation, RelativeTokenSeparation,
+            TokenDistanceRestraint, TokenPairPocketRestraint,
+            AtomNameOneHot, AtomRefCharge, AtomRefElement, AtomRefMask, AtomRefPos):
+        arg16_1 = TemplateDistogram
+        arg17_1 = TemplateMask
+        arg18_1 = TemplateResType
+        arg19_1 = TemplateUnitVector
+        arg20_1 = ChainIsCropped
+        arg21_1 = ESMEmbeddings
+        arg22_1 = IsDistillation
+        arg23_1 = MSADeletionMean
+        arg24_1 = MSAProfile
+        arg25_1 = MissingChainContact
+        arg26_1 = ResidueType
+        arg27_1 = TokenBFactor
+        arg28_1 = TokenPLDDT
+        arg29_1 = BlockedAtomPairDistogram
+        arg30_1 = InverseSquaredBlockedAtomPairDistances
+        arg31_1 = IsPairedMSA
+        arg32_1 = MSADataSource
+        arg33_1 = MSADeletionValue
+        arg34_1 = MSAHasDeletion
+        arg35_1 = MSAOneHot
+        arg36_1 = DockingConstraintGenerator
+        arg37_1 = RelativeChain
+        arg38_1 = RelativeEntity
+        arg39_1 = RelativeSequenceSeparation
+        arg40_1 = RelativeTokenSeparation
+        arg41_1 = TokenDistanceRestraint
+        arg42_1 = TokenPairPocketRestraint
+        arg43_1 = AtomNameOneHot
+        arg44_1 = AtomRefCharge
+        arg45_1 = AtomRefElement
+        arg46_1 = AtomRefMask
+        arg47_1 = AtomRefPos
         arg0_1 = self.arg0_1
         arg1_1 = self.arg1_1
         arg2_1 = self.arg2_1
@@ -43,7 +85,7 @@ class feature_embedding_module(nn.Module):
         arg12_1 = self.arg12_1
         arg13_1 = self.arg13_1
         arg14_1 = self.arg14_1
-        arg15_1 = self.arg15_1
+        # arg15_1 = self.arg15_1
         _lifted_tensor_constant0 = self._lifted_tensor_constant0
         _lifted_tensor_constant1 = self._lifted_tensor_constant1
 
@@ -247,7 +289,7 @@ class feature_embedding_module(nn.Module):
         arange_15 = torch.arange(1,device = self.device,pin_memory = False) 
         mul_2 = torch.mul(arange_15,33) ;  arange_15 = None
         add = torch.add(_to_copy_62,mul_2) ;  _to_copy_62 = mul_2 = None
-        embedding = torch.nn.functional.embedding(arg0_1,add) ;  arg0_1 = add = None
+        embedding = torch.nn.functional.embedding(add,arg0_1) ;  arg0_1 = add = None
         view_40 = embedding.view(1, 4, 512, 1, 32) 
         view_41 = embedding.view(1, 4, 1, 512, 32) ;  embedding = None
         add_1 = torch.add(view_40,view_41) ;  view_40 = view_41 = None

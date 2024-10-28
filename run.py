@@ -24,7 +24,7 @@ GAAL
 CCCCCCCCCCCCCC(=O)O
 """.strip()
 
-fasta_path = Path(".fastas/example.fasta")
+fasta_path = Path("./fastas/example.fasta")
 fasta_path.write_text(example_fasta)
 
 output_dir = Path("./outputs")

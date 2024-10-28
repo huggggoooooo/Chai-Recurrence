@@ -88,7 +88,8 @@ from chai_lab.utils.tensor_utils import move_data_to_device, set_seed, und_self
 from chai_lab.utils.typing import Float, typecheck
 
 
-from chai_lab.model.feature_embedding_module import feature_embedding_module
+# from chai_lab.model.feature_embedding_module import feature_embedding_module
+from chai_lab.model.feature_embedding_module_t import feature_embedding_module
 # from chai_lab.model.token_input_embedder_module import token_input_embedder_module
 from chai_lab.model.token_input_embedder_module_t import token_input_embedder_module
 from chai_lab.model.trunk_module import trunk_module
@@ -429,22 +430,32 @@ def run_folding_on_context(
     ## Run the features through the feature embedder
     ##
 
-    embedded_features = feature_embedding.forward(**features)
-    # values = [features[key] for key in features.keys()]
-    # feature_embedding = feature_embedding_module(feature_embedding)
-    # embedded_features = feature_embedding.forward(*values)
-    token_single_input_feats = embedded_features["TOKEN"]
-    token_pair_input_feats, token_pair_structure_input_feats = embedded_features[
-        "TOKEN_PAIR"
-    ].chunk(2, dim=-1)
-    atom_single_input_feats, atom_single_structure_input_feats = embedded_features[
-        "ATOM"
-    ].chunk(2, dim=-1)
+    # embedded_features = feature_embedding.forward(**features)
+    embedded_features = feature_embedding_module(feature_embedding).forward(**features)
+
+    # to use feature_embedding_module, output should be adjusted manully
+
+    # token_single_input_feats = embedded_features["TOKEN"] # [2]
+    # token_pair_input_feats, token_pair_structure_input_feats = embedded_features[
+    #     "TOKEN_PAIR"
+    # ].chunk(2, dim=-1) # [3]
+    # atom_single_input_feats, atom_single_structure_input_feats = embedded_features[
+    #     "ATOM" 
+    # ].chunk(2, dim=-1) # [0]
+    # block_atom_pair_input_feats, block_atom_pair_structure_input_feats = (
+    #     embedded_features["ATOM_PAIR"].chunk(2, dim=-1)
+    # ) # [1]
+    # template_input_feats = embedded_features["TEMPLATES"] # [5]
+    # msa_input_feats = embedded_features["MSA"] # [4]
+
+    token_single_input_feats = embedded_features[2]
+    token_pair_input_feats, token_pair_structure_input_feats = embedded_features[3].chunk(2, dim=-1) 
+    atom_single_input_feats, atom_single_structure_input_feats = embedded_features[0].chunk(2, dim=-1)
     block_atom_pair_input_feats, block_atom_pair_structure_input_feats = (
-        embedded_features["ATOM_PAIR"].chunk(2, dim=-1)
+        embedded_features[1].chunk(2, dim=-1)
     )
-    template_input_feats = embedded_features["TEMPLATES"]
-    msa_input_feats = embedded_features["MSA"]
+    template_input_feats = embedded_features[5]
+    msa_input_feats = embedded_features[4] 
 
     ##
     ## Run the inputs through the token input embedder
